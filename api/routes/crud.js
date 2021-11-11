@@ -2,6 +2,7 @@ const books=require('../../model/book');
 const librarian=require('../../model/librarian');
 const user=require('../../model/user');
 const bookIssued=require('../../model/bookIssued');
+const bills = require('../../model/bill');
 const { response } = require('express');
 
 module.exports = function (router) {
@@ -130,6 +131,48 @@ module.exports = function (router) {
             res.invalidInput(err)
         }
     })
+
+    router.post('/bill', async function (req, res) {    
+        let userData = await user.findOne({allocId:req.body.allocId});
+        let books = await bookIssued.find({userId:userData._id});
+        if(books == null){
+            res.send('No books found');
+        }
+        else{
+            let currDate = new Date();
+            console.log(currDate);
+            for(let i in books){
+                if(books[i].dueDate < currDate){
+                    let timeDifference = Math.abs(currDate.getTime() - dueDate.getTime());
+                    let newBill = new bills();
+                    newBill.bookIssueId = books[i]._id;
+                    newBill.bill = timeDifference;
+                    newBill.save((err,response)=>{
+                        if (err) {
+                            res.invalidInput(err)
+                        }
+                        else {
+                            res.success(response)
+                        }
+                    })
+                }
+                else{
+                    res.success('No Due dates');
+                }
+            }
+
+        }
+    })
+
+    router.put('/bill/:id',async function (req, res) {
+        try{
+            let billData=await bills.findByIdAndUpdate({_id:req.params.id},{$set:{status:'PAID'}});
+            return res.success(billData);
+        }
+        catch(err){
+            res.invalidInput(err)
+        }
+    });
 
 
 }
